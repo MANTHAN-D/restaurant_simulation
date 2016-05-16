@@ -19,7 +19,7 @@ thread first;
 bool stopAppendDataFlag=false;
 list<Task*> pending_tasks;
 
-int max_assign_time=100;
+int max_assign_time=50;
 
 void set_timer(double seconds){
     clock_t startTime = clock(); //Start timer
@@ -38,26 +38,6 @@ void set_timer(double seconds){
     }
 }
 
-vector<Task*> generateOrders(int n){
-
-	vector<Task*> orders(n);
-
-	//Initialize random seed	
-	srand(time(NULL));
-
-	int order_number = task_board.getLastOrder();
-	for(int i=0;i<n;i++)
-	{
-		double prep_time = (double)(rand() % 8) / 100;
-		prep_time = 6.0 + prep_time * (2.0);
-		orders[i] = new Task(order_number++,rand()%4 + 1,prep_time);
-		cout<< orders[i]->toString() << endl;
-	}
-	task_board.setLastOrder(order_number);
-	return orders;
-
-}
-
 void process(){
     
 
@@ -66,7 +46,7 @@ void process(){
 	#pragma omp parallel
 	{       
 		int id = omp_get_thread_num()+1;		
-		for(int i=id;i<=task_board.getNoOfCooks();i++)
+		for(int i=id;i<=task_board.getNoOfCooks();i+=NUM_THREADS)
         	{					
 			//until the task is not empty it will process the task one by one from task queue
 			Cook* currentCook = task_board.getCook(i);
@@ -77,7 +57,7 @@ void process(){
 				Task* task = currentCook->getFirstTask();
 				//printf("%d order is being prepared by %d,%f!!\n",task->getOrderId(),currentCook->getCookId(),currentCook->getBusyTime());
                 		set_timer(task->getPrepTime());
-				printf("%d order is ready!!\n",task->getOrderId());
+				printf("%d order is ready!! Now cook %d is busy by %f\n",task->getOrderId(),currentCook->getCookId(),currentCook->getBusyTime());
             		}
         	}
 	}
@@ -132,41 +112,66 @@ bool addTaskToCook(Task* task){
 
 void assign_data_cook(){
 
-        while (!pending_tasks.empty()) {
+	//printf("Console test ------------Inside Assign to cook------- %d\n",pending_tasks.empty());
+	while (!pending_tasks.empty()) {
         
-            Task* currentTask = pending_tasks.front();
-            pending_tasks.erase(pending_tasks.begin());
-        
-            if(addTaskToCook(currentTask)){
-		stopAppendDataFlag = false;
-            }
-            else{
-                //pending_tasks.erase(pending_tasks.begin());
-                //pending_tasks.push_back(currentTask);
-		//first.detach(); 
-		if(pending_tasks.size() >= task_board.getNoOfCooks())		
-		{
-			pending_tasks.insert(pending_tasks.begin(),task_board.getNoOfCooks(),currentTask);
+		Task* currentTask = pending_tasks.front();
+		pending_tasks.erase(pending_tasks.begin());
+		//printf("Console test ------------Inside while-------%s\n",currentTask->toString());        
+		if(addTaskToCook(currentTask)){
+			stopAppendDataFlag = false;
 		}
 		else{
-			pending_tasks.insert(pending_tasks.begin(),0,currentTask);
+			//pending_tasks.erase(pending_tasks.begin());
+			//pending_tasks.push_back(currentTask);
+			//first.detach(); 
+			if(pending_tasks.size() >= task_board.getNoOfCooks())		
+			{
+				list<Task*>::iterator it = pending_tasks.begin();
+				++it;++it;++it;++it;
+				pending_tasks.insert(it,currentTask);
+			}
+			else{
+				pending_tasks.insert(pending_tasks.begin(),currentTask);
+			}
+			printf("-----------------Not added----------------------------\n");             
+			stopAppendDataFlag = true;
+			break;
 		}
-		printf("-----------------Not added----------------------------\n");             
-		stopAppendDataFlag = true;
-		break;
-            }
         }
+}
+
+vector<Task*> generateOrders(int n){
+
+	vector<Task*> orders(n);
+
+	//Initialize random seed	
+	srand(time(NULL));
+
+	int order_number = task_board.getLastOrder();
+	for(int i=0;i<n;i++)
+	{
+		double prep_time = (double)(rand() % 8) / 10;
+		prep_time = 3.0 + prep_time * (5.0);
+		orders[i] = new Task(order_number++,rand()%4 + 1,prep_time);
+		cout<< orders[i]->toString() << endl;
+	}
+	task_board.setLastOrder(order_number);
+	return orders;
+
 }
 
 void appendNewData(){
 
 	while(1){
     
+		//printf("Console test ------------Flag is %d",stopAppendDataFlag);
 		if(!stopAppendDataFlag)
 		{
 			vector<Task*> generated_task = generateOrders(10);
 			pending_tasks.insert(pending_tasks.end(),generated_task.begin(),generated_task.end());
 		}			
+		//printf("Console test ------------Assign to cook called--------");		
 		assign_data_cook();
 		set_timer(5);
     	}    	
