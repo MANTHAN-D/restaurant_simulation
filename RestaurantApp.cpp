@@ -7,6 +7,9 @@
 #include<time.h>
 #include <ctime>
 #include <cstdlib>
+#include <fstream>
+#include<boost/tokenizer.hpp>
+#include<string>
 #include "TaskBoard.h"
 #include <thread>
 #include <list>
@@ -20,6 +23,9 @@ bool stopAppendDataFlag=false;
 list<Task*> pending_tasks;
 
 int max_assign_time=50;
+
+using namespace std;
+using namespace boost;
 
 void set_timer(double seconds){
     clock_t startTime = clock(); //Start timer
@@ -56,7 +62,8 @@ void process(){
 				//printf("\n");		
 				Task* task = currentCook->getFirstTask();
 				//printf("%d order is being prepared by %d,%f!!\n",task->getOrderId(),currentCook->getCookId(),currentCook->getBusyTime());
-                		set_timer(task->getPrepTime());
+                		set_timer(task->getPrepTime());			
+
 				printf("%d order is ready!! Now cook %d is busy by %f\n",task->getOrderId(),currentCook->getCookId(),currentCook->getBusyTime());
             		}
         	}
@@ -100,7 +107,7 @@ bool addTaskToCook(Task* task){
 	//If the cook is going to have minimum value but the whole stack for now is surpassing
 	//the time that can be assigned then sending false as to know that task hasn't been assigned
 	if((task_board.getCook(to_be_assigned_cook)->getBusyTime()+task->getPrepTime()) > max_assign_time){
-		printf("-----------***************------------------%d, %f, %f\n",task_board.getCook(to_be_assigned_cook)->getCookId(),task_board.getCook(to_be_assigned_cook)->getBusyTime(),task->getPrepTime());		
+		//printf("-----------***************------------------%d, %f, %f\n",task_board.getCook(to_be_assigned_cook)->getCookId(),task_board.getCook(to_be_assigned_cook)->getBusyTime(),task->getPrepTime());		
 		return false;
 	}
     
@@ -118,8 +125,13 @@ void assign_data_cook(){
 		Task* currentTask = pending_tasks.front();
 		pending_tasks.erase(pending_tasks.begin());
 		//printf("Console test ------------Inside while-------%s\n",currentTask->toString());        
-		if(addTaskToCook(currentTask)){
-			stopAppendDataFlag = false;
+		bool addStatus;
+		
+		#pragma omp critical
+		addStatus = addTaskToCook(currentTask);		
+
+		if(addStatus){
+			//stopAppendDataFlag = false;
 		}
 		else{
 			//pending_tasks.erase(pending_tasks.begin());
@@ -134,47 +146,56 @@ void assign_data_cook(){
 			else{
 				pending_tasks.insert(pending_tasks.begin(),currentTask);
 			}
-			printf("-----------------Not added----------------------------\n");             
-			stopAppendDataFlag = true;
-			break;
+			//printf("-----------------Not added----------------------------\n");             
+			//stopAppendDataFlag = true;
+			//break;
 		}
-        }
+  }
 }
 
 vector<Task*> generateOrders(int n){
 
 	vector<Task*> orders(n);
 
-	//Initialize random seed	
-	srand(time(NULL));
+  ifstream myfile ("orders1.csv");
+  if (myfile.is_open())
+  {
+    string line;
+    string values[3];int i,index=0;
+    getline (myfile,line);
+    while ( getline (myfile,line) )
+    {      
+      tokenizer<escaped_list_separator<char> > tok(line);
+      i=0;
+      for(tokenizer<escaped_list_separator<char> >::iterator beg=tok.begin(); beg!=tok.end();++beg){
+        //cout << *beg << "\n";
+        values[i++]=*beg;
+      }
+      orders[index++] = new Task(stoi(values[0],NULL,10),stoi(values[1],NULL,10),stod(values[2],NULL));
+    }
+    
+    myfile.close();
+  }
 
-	int order_number = task_board.getLastOrder();
-	for(int i=0;i<n;i++)
-	{
-		double prep_time = (double)(rand() % 8) / 10;
-		prep_time = 3.0 + prep_time * (5.0);
-		orders[i] = new Task(order_number++,rand()%4 + 1,prep_time);
-		cout<< orders[i]->toString() << endl;
-	}
-	task_board.setLastOrder(order_number);
-	return orders;
+  else cout << "Unable to open file";   	
+  return orders;
 
 }
 
 void appendNewData(){
 
-	while(1){
+	//while(1){
     
 		//printf("Console test ------------Flag is %d",stopAppendDataFlag);
-		if(!stopAppendDataFlag)
-		{
-			vector<Task*> generated_task = generateOrders(10);
+		//if(!stopAppendDataFlag)
+		//{
+			vector<Task*> generated_task = generateOrders(500);
 			pending_tasks.insert(pending_tasks.end(),generated_task.begin(),generated_task.end());
-		}			
-		//printf("Console test ------------Assign to cook called--------");		
+		//}			
+		//printf("Console test ------------Assign to cook called-------- %d",pending_tasks.size());		
 		assign_data_cook();
-		set_timer(5);
-    	}    	
+		//set_timer(5);
+    	//}    	
 }
 
 
@@ -188,16 +209,19 @@ int main(){
 	// Initialise task board
 	task_board = TaskBoard(4,10);
 
+	thread third(process);
+	
 	//generate data
-	thread first(appendNewData);
+	//thread first(appendNewData);
+	  appendNewData();
 
 	//assign data to cooks
 	//thread two(assign_data_cook);
     
 	//process tasks
-	thread third(process);
+	//thread third(process);
     
-	first.join();
+	//first.join();
 	//two.join();
 	third.join();
 
