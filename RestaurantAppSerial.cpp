@@ -14,12 +14,13 @@
 #include <list>
 #include "omp.h"
 
-#define NUM_THREADS 4
+#define NUM_THREADS 1
 
 TaskBoard task_board;
 list<Task*> pending_tasks;
 queue<string> order_completion_queue;
-list<Task*> pending_tasks_list;
+string file_name;
+int order_count;
 
 int max_assign_time=50;
 
@@ -27,33 +28,26 @@ using namespace std;
 using namespace boost;
 
 void process(){ 
-	#pragma omp parallel num_threads(NUM_THREADS)
-	{       
-		int id = omp_get_thread_num()+1;		
-		for(int i=id;i<=task_board.getNoOfCooks();i+=NUM_THREADS)
-    {					
-			//until the task is not empty it will process the task one by one from task queue
-			while(1)
-			{
-			Cook* currentCook = task_board.getCook(i);
+  printf("Staring process\n");	
+	while(1)
+	{
+			Cook* currentCook = task_board.getCook(1);
 			while (!currentCook->isCookFree()) {
    		
 				Task* task = currentCook->getFirstTask();
 				printf("%d order is being prepared by %d,%f!!\n",task->getOrderId(),currentCook->getCookId(),currentCook->getBusyTime());
-        usleep(task->getPrepTime()*1000000);			
-        task->setCompleted(1);
+                		usleep(task->getPrepTime()*1000000);			
+
 				printf("%d order is ready!! Now cook %d is busy by %f\n",task->getOrderId(),currentCook->getCookId(),currentCook->getBusyTime());
-				order_completion_queue.push(task->toString());
 				delete task;
       }
       usleep(3000000);
-      if(pending_tasks.size()<=0){
-        cout<<"Exiting process"<<endl;
+      if(pending_tasks.size() <= 0)
+      {
+        cout<<"Exiting process"<<endl; 
         break;
       }
-      }
-    }
-	}
+  }
 }
 
 bool addTaskToCook(Task* task){
@@ -71,7 +65,7 @@ bool addTaskToCook(Task* task){
             
 		}
 	}
-    
+
 	//If the cook is going to have minimum value but the whole stack for now is surpassing
 	//the time that can be assigned then sending false as to know that task hasn't been assigned
 	if((task_board.getCook(to_be_assigned_cook)->getBusyTime()+task->getPrepTime()) > max_assign_time){		
@@ -108,7 +102,6 @@ void assign_data_cook(){
 			}
 			usleep(5000000);
 		}
-		pending_tasks_list = pending_tasks;
   }
 }
 
@@ -142,16 +135,9 @@ void appendNewData(string file_name, int n){
 
     vector<Task*> generated_task = generateOrders(file_name, n);
     pending_tasks.insert(pending_tasks.end(),generated_task.begin(),generated_task.end());
-    pending_tasks_list = pending_tasks;
 		assign_data_cook();
 }
 
-void startAppendData(){
-
-    vector<Task*> generated_task = generateOrders("orders50.csv", 50);
-    pending_tasks.insert(pending_tasks.end(),generated_task.begin(),generated_task.end());
-		assign_data_cook();
-}
 
 void removeOrder(int order_id){
     
@@ -161,6 +147,16 @@ void removeOrder(int order_id){
 int testSquare(string name,int n){
   printf("%s",name);
   return n*n;
+}
+
+void setFileName(string name)
+{
+  file_name = name;
+}
+
+void setOrderCount(int n)
+{
+  order_count=n;
 }
 
 void setTaskBoard(){
@@ -175,68 +171,15 @@ void startApp(){
 	third.join();
 
 }
-
-string getPendingTaskStatus(){
-  string result="\n";
-  printf("Holla %d", pending_tasks_list.size());
-  for(list<Task*>::iterator it = pending_tasks_list.begin();it!=pending_tasks_list.end();++it)
-  {
-    result.append((*it)->toString());
-    result.append("\n");
-  }
-  return result;
-}
-
-string getCompletedTaskStatus(){
-  string result="\n";
-  int stopVal = order_completion_queue.size();
-  for(int i=0;i<stopVal;i++)
-  {
-    result.append(order_completion_queue.front());
-    order_completion_queue.pop();
-    result.append("\n");
-  }
-  return result;
-}
-
-void wordPrintData()
-{
-  while(1)
-  {
-    printf(getPendingTaskStatus().c_str());
-    usleep(3000000);
-  }
-}
-
 int main(){
 	
 	// Initialise task board
-	task_board = TaskBoard(4,10);
-
+	task_board = TaskBoard(1,10);
   //process tasks
 	thread third(process);
-	thread fourth(wordPrintData);
-	//thread third(	printf("Time taken by process(): %lld microsec", measure<>::execution(process)));
-	//#pragma omp parallel sections num_threads(2)
-	//{
-	    //#pragma omp section
-	   // {
-	        //appendNewData("orders50.csv", 50);
-	     //   printf("ID :%d\n",omp_get_thread_num());
-	    //}
-	    
-	   // #pragma omp section
-	    //{
-	     //   usleep(2000000);
-	        //process();
-      //    printf("ID :%d\n",omp_get_thread_num());
-	    //}
-	//}
 	//generate data
-	printf("Time taken by appendNewData(): %lld ms\n", measure<>::execution(appendNewData,"orders50.csv",50));
-	//appendNewData("orders50.csv", 50);
+	printf("Time taken by appendNewData(): %lld ms\n", measure<>::execution(appendNewData,"orders.csv",500));
   
 	third.join();
-	fourth.join();
 	return 0;
 }
