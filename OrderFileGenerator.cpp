@@ -11,8 +11,8 @@
 using namespace std;
 using namespace boost;
 
-void generateOrders(int n){
-   ofstream myfile ("orders1.csv");
+void generateOrders(string file_name, int n){
+   ofstream myfile (file_name);
   
    if (myfile.is_open())
    {
@@ -31,9 +31,9 @@ void generateOrders(int n){
   }
   else cout << "Unable to create orders file";
 }
-void printTasks(){
+void printTasks(string file_name){
 
-  ifstream myfile ("orders.csv");
+  ifstream myfile (file_name);
   if (myfile.is_open())
   {
     string line;
@@ -57,7 +57,7 @@ void printTasks(){
 }
 
 int main () {
-  generateOrders(100);
+  generateOrders("orders50.csv",50);
   //To check the sanity of code
   //printTasks();
   return 0;
