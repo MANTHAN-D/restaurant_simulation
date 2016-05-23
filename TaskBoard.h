@@ -35,12 +35,17 @@ class TaskBoard{
 			task_board.push_back(new Cook(i));			
 		}		
 	}
-  /*
+  
   ~TaskBoard()
 	{
 	  cout<< "Task Board being deleted."<<endl;
+	  for(vector<Cook*>::iterator it=task_board.begin();it!=task_board.end();++it)
+	  {
+	    delete (*it);
+	  }
+	  vector<Cook*>().swap(task_board);
 	}
-	*/
+	
 	int getNoOfCooks(){
 		return task_board.size();
 	}

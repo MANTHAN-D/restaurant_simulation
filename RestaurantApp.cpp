@@ -19,6 +19,7 @@
 TaskBoard task_board;
 list<Task*> pending_tasks;
 queue<string> order_completion_queue;
+list<Task*> pending_tasks_list;
 
 int max_assign_time=50;
 
@@ -32,16 +33,24 @@ void process(){
 		for(int i=id;i<=task_board.getNoOfCooks();i+=NUM_THREADS)
     {					
 			//until the task is not empty it will process the task one by one from task queue
+			while(1)
+			{
 			Cook* currentCook = task_board.getCook(i);
 			while (!currentCook->isCookFree()) {
    		
 				Task* task = currentCook->getFirstTask();
 				printf("%d order is being prepared by %d,%f!!\n",task->getOrderId(),currentCook->getCookId(),currentCook->getBusyTime());
         usleep(task->getPrepTime()*1000000);			
-
+        task->setCompleted(1);
 				printf("%d order is ready!! Now cook %d is busy by %f\n",task->getOrderId(),currentCook->getCookId(),currentCook->getBusyTime());
 				order_completion_queue.push(task->toString());
 				delete task;
+      }
+      usleep(3000000);
+      if(pending_tasks.size()<=0){
+        cout<<"Exiting process"<<endl;
+        break;
+      }
       }
     }
 	}
@@ -99,6 +108,7 @@ void assign_data_cook(){
 			}
 			usleep(5000000);
 		}
+		pending_tasks_list = pending_tasks;
   }
 }
 
@@ -135,6 +145,12 @@ void appendNewData(string file_name, int n){
 		assign_data_cook();
 }
 
+void startAppendData(){
+
+    vector<Task*> generated_task = generateOrders("orders50.csv", 50);
+    pending_tasks.insert(pending_tasks.end(),generated_task.begin(),generated_task.end());
+		assign_data_cook();
+}
 
 void removeOrder(int order_id){
     
@@ -161,7 +177,7 @@ void startApp(){
 
 string getPendingTaskStatus(){
   string result="\n";
-  for(list<Task*>::iterator it = pending_tasks.begin();it!=pending_tasks.end();++it)
+  for(list<Task*>::iterator it = pending_tasks_list.begin();it!=pending_tasks_list.end();++it)
   {
     result.append((*it)->toString());
     result.append("\n");
@@ -207,7 +223,6 @@ int main(){
 	//generate data
 	printf("Time taken by appendNewData(): %lld ms\n", measure<>::execution(appendNewData,"orders50.csv",50));
 	//appendNewData("orders50.csv", 50);
-	//appendNewData();
   
 	third.join();
 	return 0;

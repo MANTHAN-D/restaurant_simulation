@@ -22,11 +22,12 @@ class Cook{
 		current_occupied_time=0;
 	}
 	
-	/*~Cook()
+	~Cook()
 	{
 		cout<<"Cook "<< cook_id <<" being deleted" << endl;
+		queue<Task*>().swap(task_queue);
 	}
-	*/
+	
 	double getBusyTime(){
 		return current_occupied_time;
 	}

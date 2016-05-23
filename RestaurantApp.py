@@ -133,6 +133,10 @@ getPendingTaskStatus = _RestaurantApp.getPendingTaskStatus
 def getCompletedTaskStatus():
   return _RestaurantApp.getCompletedTaskStatus()
 getCompletedTaskStatus = _RestaurantApp.getCompletedTaskStatus
+
+def startAppendData():
+  return _RestaurantApp.startAppendData()
+startAppendData = _RestaurantApp.startAppendData
 # This file is compatible with both classic and new-style classes.
 
 cvar = _RestaurantApp.cvar
