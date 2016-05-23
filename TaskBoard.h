@@ -33,9 +33,14 @@ class TaskBoard{
 		task_board.reserve(NO_OF_COOK);
 		for(int i=1;i<=NO_OF_COOK;i++){
 			task_board.push_back(new Cook(i));			
-		}
+		}		
 	}
-
+  /*
+  ~TaskBoard()
+	{
+	  cout<< "Task Board being deleted."<<endl;
+	}
+	*/
 	int getNoOfCooks(){
 		return task_board.size();
 	}
