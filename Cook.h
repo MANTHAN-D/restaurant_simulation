@@ -22,6 +22,7 @@ class Cook{
 		current_occupied_time=0;
 	}
 	
+	
 	~Cook()
 	{
 		cout<<"Cook "<< cook_id <<" being deleted" << endl;

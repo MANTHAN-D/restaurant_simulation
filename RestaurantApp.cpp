@@ -178,7 +178,7 @@ void startApp(){
 
 string getPendingTaskStatus(){
   string result="\n";
-  printf("Holla %d", pending_tasks_list.size());
+  printf("Currently pending orders: %d", pending_tasks_list.size());
   for(list<Task*>::iterator it = pending_tasks_list.begin();it!=pending_tasks_list.end();++it)
   {
     result.append((*it)->toString());
@@ -215,28 +215,56 @@ int main(){
 
   //process tasks
 	thread third(process);
-	thread fourth(wordPrintData);
-	//thread third(	printf("Time taken by process(): %lld microsec", measure<>::execution(process)));
-	//#pragma omp parallel sections num_threads(2)
-	//{
-	    //#pragma omp section
-	   // {
-	        //appendNewData("orders50.csv", 50);
-	     //   printf("ID :%d\n",omp_get_thread_num());
-	    //}
-	    
-	   // #pragma omp section
-	    //{
-	     //   usleep(2000000);
-	        //process();
-      //    printf("ID :%d\n",omp_get_thread_num());
-	    //}
-	//}
+	
 	//generate data
 	printf("Time taken by appendNewData(): %lld ms\n", measure<>::execution(appendNewData,"orders50.csv",50));
-	//appendNewData("orders50.csv", 50);
-  
+	
+	//thread fourth(wordPrintData);
+
 	third.join();
-	fourth.join();
+	//fourth.join();
+	
+	/*#pragma omp parallel sections num_threads(5)
+	{
+	    #pragma omp section
+	    {
+	        appendNewData("orders50.csv", 50);
+	        printf("ID :%d\n",omp_get_thread_num());
+	    }
+	    
+	    #pragma omp section
+	    {
+	        usleep(2000000);
+	        process();
+          printf("ID :%d\n",omp_get_thread_num());
+	    }
+	}*/
+	/*#pragma omp parallel num_threads(5)
+	{
+	    #pragma omp master
+	    {
+	        appendNewData("orders50.csv", 50);
+	        printf("ID :%d\n",omp_get_thread_num());
+	    }
+	    
+
+	    usleep(2000000);
+      process();
+      printf("ID :%d\n",omp_get_thread_num());	    
+	}*/
+	/*#pragma omp parallel num_threads(5)
+	{
+	    #pragma omp single
+	    {
+	        appendNewData("orders50.csv", 50);
+	        printf("ID :%d\n",omp_get_thread_num());
+	    }
+	    
+
+	    //usleep(2000000);
+      process();
+      printf("ID :%d\n",omp_get_thread_num());	    
+	}*/		
+  
 	return 0;
 }
