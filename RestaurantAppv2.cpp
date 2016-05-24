@@ -184,26 +184,9 @@ int main(){
 	task_board = TaskBoard(2,10);
   //process tasks
 	thread third(process);
-	//thread third(	printf("Time taken by process(): %lld microsec", measure<>::execution(process)));
-	//#pragma omp parallel sections num_threads(2)
-	//{
-	    //#pragma omp section
-	   // {
-	        //appendNewData("orders50.csv", 50);
-	     //   printf("ID :%d\n",omp_get_thread_num());
-	    //}
-	    
-	   // #pragma omp section
-	    //{
-	     //   usleep(2000000);
-	        //process();
-      //    printf("ID :%d\n",omp_get_thread_num());
-	    //}
-	//}
+	
 	//generate data
 	printf("Time taken by appendNewData(): %lld ms\n", measure<>::execution(appendNewData,"orders.csv",500));
-	//appendNewData("orders50.csv", 50);
-	//appendNewData();
   
 	third.join();
 	return 0;
